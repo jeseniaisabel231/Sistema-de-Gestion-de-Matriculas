@@ -10,5 +10,5 @@ export const routes: Routes = [
     { path: 'modulo-materias', component: MateriasPage, canActivate: [guardianAuthPrivada]},
     { path: 'modulo-estudiantes', component: EstudiantesPage, canActivate: [guardianAuthPrivada]},
     { path: 'modulo-matriculas', component: MatriculasPage, canActivate: [guardianAuthPrivada]},
-    { path: '**', redirectTo: 'modulo-estudiantes', pathMatch:'full' }
+    { path: '**', redirectTo: '/iniciar-sesion', pathMatch:'full' }
 ];
