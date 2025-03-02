@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -15,9 +15,11 @@ import {
   NgModel,
   Validators,
 } from '@angular/forms';
+import { Carga } from "../components/carga.component";
 
 @Component({
-  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule],
+  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule, Carga],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!--min-h-screen: como minimo ocupe la pantalla completa, si sobre pasa es emimnimo pararece el scrollbar-->
     <main class="flex max-w-screen min-h-screen flex-col">
@@ -26,7 +28,7 @@ import {
       >
         <div class="flex items-center gap-4">
           <!-- 2. evento click que alterna el valor de mostrar entre true y false, cuando se hace clik en el "boton", este cambia de valor-->
-          <button type="button" (click)="mostrar = !mostrar">
+          <button type="button" (click)="mostrar.set(!mostrar())">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="15"
@@ -59,7 +61,7 @@ import {
       <div class="flex flex-row bg-[#F3F5F7] flex-1">
         <!--[mostrar] es puente que envia el valor obtenido de "mostrar", puente entre header y nav, con esto no se mostrar la barra por que es false -->
         <!--Esto permite que el componente hijo acceda y utilice el valor de mostrar para controlar su comportamiento o apariencia.-->
-        <navegacion [mostrar]="mostrar"></navegacion>
+        <navegacion [mostrar]="mostrar()"></navegacion>
 
         <section class="flex flex-col p-5 mt-2 gap-3 text-[#3B3D3E] w-full">
           <bienvenido></bienvenido>
@@ -69,7 +71,7 @@ import {
             <h1 class="">Estudiantes</h1>
             <button
               class="w-[125px] mt-1 p-2 rounded-[8px] bg-[#2872FF] text-white font-light text-[14px]"
-              (click)="mostrarModal = true"
+              (click)="mostrarModal.set(true)"
             >
               + Crear Nuevo
             </button>
@@ -107,12 +109,17 @@ import {
                 name="search"
               />
             </div>
-            <tabla
-              titulo="estudiante"
-              [datosTabla]="datosBuscados()"
-              [datosAlmacenados]="datosEstudiantes"
-              [servicioEliminar]="serviceEstudiante"
-            ></tabla>
+            @if (carga()) {
+              <carga></carga>
+            }@else {
+
+              <tabla
+                titulo="estudiante"
+                [datosTabla]="datosBuscados()"
+                [datosAlmacenados]="datosEstudiantes"
+                [servicioEliminar]="serviceEstudiante"
+              ></tabla>
+            }
           </div>
         </section>
       </div>
@@ -122,8 +129,11 @@ import {
 export class EstudiantesPage {
   //1.false: menu de navegacion oculto
   //Variable que hara que la barra de navegacion se muestre o no se muestre
-  public mostrar = true;
-  public mostrarModal = false;
+  public mostrar = signal<boolean>(true);
+  public mostrarModal = signal<boolean>(false);
+
+  //estado de carga
+  public carga = signal<boolean>(true);
 
   public serviceEstudiante = inject(EstudiantesService);
 
@@ -146,17 +156,27 @@ export class EstudiantesPage {
 
   //Informacion que aparecera en los iconos, para ver, editar y crear
   public datosEstudiantes = new FormGroup({
-    nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
+    nombre: new FormControl('', [
+      Validators.required,
+      Validators.minLength(3),
+      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
+    ]),
     apellido: new FormControl('', [
       Validators.required,
       Validators.minLength(3),
+      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
     ]),
     cedula: new FormControl('', [
       Validators.required,
       Validators.minLength(10),
+      Validators.pattern('^[0-9]*$') // Solo números
     ]),
     fecha_nacimiento: new FormControl('', [Validators.required]),
-    ciudad: new FormControl('', [Validators.required, Validators.minLength(4)]),
+    ciudad: new FormControl('', [
+      Validators.required,
+      Validators.minLength(4),
+      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
+    ]),
     direccion: new FormControl('', [
       Validators.required,
       Validators.minLength(8),
@@ -164,6 +184,7 @@ export class EstudiantesPage {
     telefono: new FormControl('', [
       Validators.required,
       Validators.minLength(10),
+      Validators.pattern('^[0-9]*$') // Solo números
     ]),
     email: new FormControl('', [Validators.required, Validators.email]),
   });
@@ -178,14 +199,14 @@ export class EstudiantesPage {
         this.estudiantes = estudiante;
         this.datosBuscados.set(estudiante)
       },
-    });
+    }).add(()=>{this.carga.set(false)})//cambia estado de carga;
   }
 
   ngOnInit() {
     this.breakpointObserver
       .observe([Breakpoints.Handset])
       .subscribe((result) => {
-        this.mostrar = !result.matches;
+        this.mostrar.set(!result.matches);
       });
   }
   salir() {

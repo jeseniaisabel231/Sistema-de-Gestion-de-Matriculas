@@ -1,4 +1,10 @@
-import { Component, inject, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -9,10 +15,17 @@ import { Formulario } from '../components/formulario.component';
 import { Tabla } from '../components/tabla.component';
 import { MateriasService } from '../services/materias.service';
 import { materia } from '../interfaces/materia.interface';
-import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  Validators,
+} from '@angular/forms';
+import { Carga } from '../components/carga.component';
 
 @Component({
-  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule],
+  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule, Carga],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!--min-h-screen: como minimo ocupe la pantalla completa, si sobre pasa es emimnimo pararece el scrollbar-->
     <main class="flex max-w-screen min-h-screen flex-col ">
@@ -21,7 +34,7 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
       >
         <div class="flex items-center gap-4">
           <!-- 2. evento click que alterna el valor de mostrar entre true y false, cuando se hace clik en el "boton", este cambia de valor-->
-          <button type="button" (click)="mostrar = !mostrar">
+          <button type="button" (click)="mostrar.set(!mostrar())">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="15"
@@ -54,7 +67,7 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
       <div class="flex flex-row bg-[#F3F5F7] flex-1">
         <!--[mostrar] es puente que envia el valor obtenido de "mostrar", puente entre header y nav, con esto no se mostrar la barra por que es false -->
         <!--Esto permite que el componente hijo acceda y utilice el valor de mostrar para controlar su comportamiento o apariencia.-->
-        <navegacion [mostrar]="mostrar"></navegacion>
+        <navegacion [mostrar]="mostrar()"></navegacion>
 
         <section class="flex flex-col p-5 mt-2 gap-3 text-[#3B3D3E] w-full ">
           <bienvenido></bienvenido>
@@ -64,7 +77,7 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
             <h1 class="">Materias</h1>
             <button
               class="w-[125px] mt-1 p-2 rounded-[8px] bg-[#2872FF] text-white font-light text-[14px]"
-              (click)="mostrarModal = true"
+              (click)="mostrarModal.set(true)"
             >
               + Crear Nuevo
             </button>
@@ -75,6 +88,7 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
               acciones="Registrar"
               [datosFormulario]="datosMaterias"
               [servicioRegistrar]="serviceMateria"
+              (cambioEmitir)="datosCreados($event)"
             ></formulario>
             <div
               class="flex mt-5 sm:flex-row sm:items-center w-full sm:w-80 bg-[#F3F5F7] border border-[#eaeaea] rounded-[10px] p-2"
@@ -101,12 +115,17 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
                 name="search"
               />
             </div>
+            @if (carga()) {
+            <carga></carga>
+            }@else {
+
             <tabla
               titulo="materia"
               [datosTabla]="datosBuscados()"
               [datosAlmacenados]="datosMaterias"
               [servicioEliminar]="serviceMateria"
             ></tabla>
+            }
           </div>
         </section>
       </div>
@@ -116,8 +135,11 @@ import { FormControl, FormGroup, FormsModule, Validators } from '@angular/forms'
 export class MateriasPage {
   //1.false: menu de navegacion oculto
   //Variable que hara que la barra de navegacion se muestre o no se muestre
-  public mostrar = true;
-  public mostrarModal = false;
+  public mostrar = signal<boolean>(true);
+  public mostrarModal = signal<boolean>(false);
+
+  //estado de carga
+  public carga = signal<boolean>(true);
 
   //inyectar al servicio para obtener el metodo 'obtenerMaterias()'
   public serviceMateria = inject(MateriasService);
@@ -126,7 +148,7 @@ export class MateriasPage {
 
   //variable que almacena datos filtrados de barra de busqueda
   public datosBuscados = linkedSignal<materia[]>(() => {
-    const datosMaterias = this.materias;
+    const datosMaterias = this.materias();
     if (this.busqueda() !== '') {
       return datosMaterias.filter((registro) =>
         Object.values(registro).some((valor) =>
@@ -138,7 +160,7 @@ export class MateriasPage {
   });
 
   //variable que almacena lo que traera del backend
-  public materias: materia[] = [];
+  public materias = signal<materia[]>([]);
   //      variable type de dato inicializado
 
   //Informacion que aparecera en los iconos, para ver, editar y crear
@@ -148,7 +170,6 @@ export class MateriasPage {
     descripcion: new FormControl('', [
       Validators.required,
       Validators.minLength(10),
-      Validators.maxLength(50),
     ]),
     creditos: new FormControl('', [
       Validators.required,
@@ -157,28 +178,39 @@ export class MateriasPage {
     ]),
   });
 
+  //funcion para recibir datos creados
+  public datosCreados(datoCreado:materia){
+    this.materias.update(materiasActuales=>[...materiasActuales, datoCreado])
+  }
+
   //consumo de endpoint de materias
   constructor(
     private router: Router,
     private breakpointObserver: BreakpointObserver
   ) {
     //obtiene la lista de materias en un observable, por lo que se usa .suscribe para obtener la respuesta
-    this.serviceMateria.obtener().subscribe({
-      next: (materia) => {
-        //contiene el arreglo de materias obtenidas desde el backend.
+    this.serviceMateria
+      .obtener()
+      .subscribe({
+        next: (materia:any) => {
+          //contiene el arreglo de materias obtenidas desde el backend.
 
-        this.materias = materia;
-        console.log(materia);
-        //Se asigna ese arreglo a this.materias, lo que actualiza la variable con los datos obtenidos.
-      },
-    });
+          this.materias.set(materia);
+          console.log(materia);
+          this.datosBuscados.set(materia);
+          //Se asigna ese arreglo a this.materias, lo que actualiza la variable con los datos obtenidos.
+        },
+      })
+      .add(() => {
+        this.carga.set(false);
+      }); //cambia estado de carga;
   }
 
   ngOnInit() {
     this.breakpointObserver
       .observe([Breakpoints.Handset])
       .subscribe((result) => {
-        this.mostrar = !result.matches;
+        this.mostrar.set(!result.matches);
       });
   }
   salir() {

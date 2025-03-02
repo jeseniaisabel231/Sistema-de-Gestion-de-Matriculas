@@ -1,4 +1,4 @@
-import { Component, inject, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -15,9 +15,11 @@ import {
   FormsModule,
   Validators,
 } from '@angular/forms';
+import { Carga } from "../components/carga.component";
 
 @Component({
-  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule],
+  imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule, Carga],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!--min-h-screen: como minimo ocupe la pantalla completa, si sobre pasa es emimnimo pararece el scrollbar-->
     <main class="flex max-w-screen min-h-screen flex-col">
@@ -26,7 +28,7 @@ import {
       >
         <div class="flex items-center gap-4">
           <!-- 2. evento click que alterna el valor de mostrar entre true y false, cuando se hace clik en el "boton", este cambia de valor-->
-          <button type="button" (click)="mostrar = !mostrar">
+          <button type="button" (click)="mostrar.set(!mostrar())">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="15"
@@ -59,7 +61,7 @@ import {
       <div class="flex flex-row bg-[#F3F5F7] flex-1">
         <!--[mostrar] es puente que envia el valor obtenido de "mostrar", puente entre header y nav, con esto no se mostrar la barra por que es false -->
         <!--Esto permite que el componente hijo acceda y utilice el valor de mostrar para controlar su comportamiento o apariencia.-->
-        <navegacion [mostrar]="mostrar"></navegacion>
+        <navegacion [mostrar]="mostrar()"></navegacion>
 
         <section class="flex flex-col p-5 mt-2 gap-3 text-[#3B3D3E] w-full">
           <bienvenido></bienvenido>
@@ -69,7 +71,7 @@ import {
             <h1 class="">Matriculas</h1>
             <button
               class="w-[125px] mt-1 p-2 rounded-[8px] bg-[#2872FF] text-white font-light text-[14px]"
-              (click)="mostrarModal = true"
+              (click)="mostrarModal.set(true)"
             >
               + Crear Nuevo
             </button>
@@ -78,6 +80,9 @@ import {
               [(mostrarModal)]="mostrarModal"
               titulo="matricula"
               acciones="Registrar"
+              [datosFormulario]="datosMatriculas"
+              [servicioRegistrar]="serviceMatricula"
+              
             ></formulario>
 
             <div
@@ -106,12 +111,17 @@ import {
                 name="search"
               />
             </div>
-            <tabla
-              titulo="matricula"
-              [datosTabla]="datosBuscados()"
-              [datosAlmacenados]="datosMatriculas"
-              [servicioEliminar]="serviceMatricula"
-            ></tabla>
+            @if (carga()) {
+            <carga></carga>
+            }@else {
+
+              <tabla
+                titulo="matricula"
+                [datosTabla]="datosBuscados()"
+                [datosAlmacenados]="datosMatriculas"
+                [servicioEliminar]="serviceMatricula"
+              ></tabla>
+            }
           </div>
         </section>
       </div>
@@ -122,8 +132,11 @@ export class MatriculasPage {
   //1.false: menu de navegacion oculto
   //Variable que hara que la barra de navegacion se muestre o no se muestre
 
-  public mostrar = true;
-  public mostrarModal = false;
+  public mostrar = signal<boolean>(true);
+  public mostrarModal = signal<boolean>(false);
+
+  //estado de carga
+  public carga = signal<boolean>(true);
 
   public serviceMatricula = inject(MatriculasService);
 
@@ -169,15 +182,16 @@ export class MatriculasPage {
       next: (matricula) => {
         this.matriculas = matricula;
         console.log(matricula);
+        this.datosBuscados.set(matricula)
       },
-    });
+    }).add(()=>{this.carga.set(false)});//carga de datos;
   }
 
   ngOnInit() {
     this.breakpointObserver
       .observe([Breakpoints.Handset])
       .subscribe((result) => {
-        this.mostrar = !result.matches;
+        this.mostrar.set(!result.matches);
       });
   }
   salir() {

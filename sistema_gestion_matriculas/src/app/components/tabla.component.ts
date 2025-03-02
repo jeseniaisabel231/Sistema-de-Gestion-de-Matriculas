@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
 import { Actions, Formulario, TituloForms } from './formulario.component';
 import { TitleCasePipe } from '@angular/common';
 import { estudiante } from '../interfaces/estudiante.interface';
@@ -98,46 +98,47 @@ export type DatosTabla = estudiante | materia | matricula;
     <formulario
       [(mostrarModal)]="mostrarModal"
       [titulo]="titulo()"
-      [desabilitado]="desabilitado"
-      [acciones]="acciones"
+      [desabilitado]="desabilitado()"
+      [acciones]="acciones()"
       [datosFormulario]="datosAlmacenados()"
       [servicioRegistrar]="servicioEliminar()"
-      [idRegistro]="idAcciones"
+      [idRegistro]="idAcciones()"
+      (cambioEmitir)="registroActualizado($event)"
     ></formulario>
   `,
 })
 export class Tabla {
-  public mostrarModal = false;
-  public desabilitado = false;
+  public mostrarModal = signal<boolean>(false);
+  public desabilitado = signal<boolean>(false);
   public titulo = input.required<TituloForms>();
-  public idAcciones: number = 1;
+  public idAcciones = signal<number>(1);
 
   //datos que van a llegar a la tabla
-  public datosTabla = input<DatosTabla[]>(); //input es tipo DatosTabla
+  public datosTabla = model<DatosTabla[]>(); //input es tipo DatosTabla
 
   public datosAlmacenados = input<FormGroup>();
 
   public servicioEliminar = input<any>();
 
-  public acciones: Actions = 'Actualizar';
+  public acciones = signal<Actions>('Actualizar');
   public columnas = computed(
     () => Object.keys(this.datosTabla()?.[0] ?? []) as (keyof DatosTabla)[]
   );
 
   //visualizado
   public verFormulario(datos: DatosTabla) {
-    this.mostrarModal = true;
-    this.desabilitado = true;
-    this.acciones = 'Visualizar';
+    this.mostrarModal.set(true);
+    this.desabilitado.set(true);
+    this.acciones.set('Visualizar');//se utiliza .set cuando se modifica el valor
     this.datosAlmacenados()?.patchValue(datos);
   }
   //editar
   public editarFormulario(datos: DatosTabla) {
-    this.mostrarModal = true;
-    this.desabilitado = false;
-    this.acciones = 'Actualizar';
+    this.mostrarModal.set(true);
+    this.desabilitado.set(false);
+    this.acciones.set('Actualizar');
     this.datosAlmacenados()?.patchValue(datos);
-    this.idAcciones = datos.id;
+    this.idAcciones.set(datos.id);
   }
 
   //funcion para eliminar un registro de materias, estudiante o matricula
@@ -147,10 +148,18 @@ export class Tabla {
         .eliminar(id)
         .subscribe({
           next: () => {
+            this.datosTabla.update((datos)=>
+              datos?.filter((registro)=>registro.id!==id)
+            )
             console.log('Eliminado con exito');
           },
         });
     }
+  }
+
+  //funcion que recibe el evento de cambioEmitir
+  public registroActualizado(datosRecibidos:any){
+    this.datosTabla.update((datosActuales)=>datosActuales?.map((registro)=>registro.id===datosRecibidos.id? datosRecibidos: registro))
   }
 
   constructor() {

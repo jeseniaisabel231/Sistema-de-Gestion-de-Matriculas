@@ -7,6 +7,7 @@ import {
   model,
   viewChild,
   SimpleChanges,
+  output,
 } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -70,7 +71,7 @@ export type Actions = 'Registrar' | 'Actualizar' | 'Visualizar';
         </label>
         }
       </form>
-      
+
       @if (acciones() !== 'Visualizar') {
 
       <div class="flex justify-end gap-3 text-[16px] w-full px-7 py-4">
@@ -98,6 +99,9 @@ export class Formulario {
   public mostrarModal = model<boolean>(false);
   public titulo = input.required<TituloForms>();
   public acciones = input.required<Actions>();
+
+  //variable para emitir el cambio
+  public cambioEmitir = output<any>();
 
   //variable que almacena el mensaje del backend para formulario crear y editar
 
@@ -140,26 +144,40 @@ export class Formulario {
   }
   //funcion que verifica que haciion hace el boton
   public onSubmit() {
-    if (this.acciones() === 'Registrar') {
-      this.servicioRegistrar().crear(this.datosFormulario()?.value).subscribe({
-        next:()=>{
-          alert('El registro se ha agregado correctamente') 
-        },error:({error}:{error:any})=>{
-          console.log(error)
-          alert(error.response)//error.response y este contiene el mensaje
-        }
-      })
-    }else{
-      this.servicioRegistrar().actualizar(this.idRegistro(), this.datosFormulario()?.value).subscribe({
-        next:()=>{
-          alert('El registro se ha actualizado correctamente')
-        },error:({error}:{error:any})=>{
-          alert(error.response)
-        }
-      })
+    console.log(this.datosFormulario()?.value);
+    if (this.datosFormulario()?.invalid) {
+      alert('Formulario inválido');
+      return;
     }
-    this.datosFormulario()?.reset();//borra los datos almacenad en registrar formulario
+    //fun cion para crear un registro
+    if (this.acciones() === 'Registrar') {
+      this.servicioRegistrar()
+        .crear(this.datosFormulario()?.value)
+        .subscribe({
+          next: (registroCreado: any) => {
+            this.cambioEmitir.emit(registroCreado);
+            alert('El registro se ha agregado correctamente');
+          },
+          error: ({ error }: { error: any }) => {
+            console.log(error);
+            alert(error.response); //error.response y este contiene el mensaje
+          },
+        });
+    } else {
+      //funcion para actualizar registro
+      this.servicioRegistrar()
+        .actualizar(this.idRegistro(), this.datosFormulario()?.value)
+        .subscribe({
+          next: (registroActualizado: any) => {
+            this.cambioEmitir.emit(registroActualizado);
+            alert('El registro se ha actualizado correctamente');
+          },
+          error: ({ error }: { error: any }) => {
+            alert(error.response);
+          },
+        });
+    }
+    this.datosFormulario()?.reset(); //borra los datos almacenad en registrar formulario
     this.close();
-
   }
 }
