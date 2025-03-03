@@ -1,36 +1,63 @@
-import http from 'k6/http';
-import { sleep, check } from 'k6';
+import { check, sleep } from "k6";
+import http from "k6/http";
 
-export function Homepage() {
-  const params = {
-    'sec-ch-ua': '"Chromium";v="94", "Google Chrome";v="94", ";Not A Brand";v="99"',
-    'accept-encoding': 'gzip, deflate, br',
-    'accept-language': 'en-GB,en;q=0.9',
+export const options = {
+  stages: [
+    { duration: "5s", target: 100 },
+    { duration: "10s", target: 200 },
+  ],
+};
+
+export default function Homepage() {
+  const BASE_URL = "https://sistema-de-gestion-de-matriculas.vercel.app";
+  const headers = {
+    "User-Agent": "k6",
   };
 
-  // 01. Go to the homepage
   let responses = http.batch([
-    ['GET', 'https://mywebsite.com/', params],
-    ['GET', 'https://mywebsite.com/style.min.css', params],
-    ['GET', 'https://website.com/header.png', params],
-    ['GET', 'https://website.com/polyfill.min.js', params],
+    [
+      "GET",
+      `${BASE_URL}/iniciar-sesion`,
+      null,
+      { tags: { ctype: "html" }, headers },
+    ],
+    [
+      "GET",
+      `${BASE_URL}/styles-OAZE2G5Y.css`,
+      null,
+      { tags: { ctype: "css" }, headers },
+    ],
+    [
+      "GET",
+      `${BASE_URL}/polyfills-FFHMD2TL.js`,
+      null,
+      { tags: { ctype: "js" }, headers },
+    ],
+    [
+      "GET",
+      `${BASE_URL}/main-TVQ5I5Y7.js`,
+      null,
+      { tags: { ctype: "js" }, headers },
+    ],
+    [
+      "GET",
+      `${BASE_URL}/chunk-4FKFCR2A.js`,
+      null,
+      { tags: { ctype: "js" }, headers },
+    ],
+    [
+      "GET",
+      `${BASE_URL}/fondo.jpg`,
+      null,
+      { tags: { ctype: "images" }, headers },
+    ],
   ]);
   check(responses, {
-    'Homepage loaded': (r) => JSON.stringify(r).includes('Welcome to my site'),
-  });
-
-  sleep(4);
-
-  // 02. View products
-  responses = http.batch([
-    ['GET', 'https://mywebsite.com/products', params],
-    ['GET', 'https://mywebsite.com/style.css', params],
-    ['GET', 'https://website.com/product1.jpg', params],
-    ['GET', 'https://website.com/product2.jpg', params],
-    ['GET', 'https://website.com/displaylist.js', params],
-  ]);
-  check(responses, {
-    'Products loaded': (r) => JSON.stringify(r).includes('Add to Cart'),
+    "Login cargado exitosamente": (r) => r[0].status === 200,
+    "Estilos cargados exitosamente": (r) => r[1].status === 200,
+    "Polyfills cargados exitosamente": (r) => r[2].status === 200,
+    "Main cargado exitosamente": (r) => r[3].status === 200,
+    "Imagen de fondo cargada exitosamente": (r) => r[4].status === 200,
   });
 
   sleep(1);

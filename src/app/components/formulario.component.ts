@@ -159,8 +159,13 @@ export class Formulario {
             alert('El registro se ha agregado correctamente');
           },
           error: ({ error }: { error: any }) => {
-            console.log(error);
-            alert(error.response); //error.response y este contiene el mensaje
+            const listaErrores = error.response?.errors ?? [];
+            if (listaErrores.length) {
+              alert(listaErrores.join('\n'));
+            } else {
+              console.log(error);
+              alert(error.response); //error.response y este contiene el mensaje
+            }
           },
         });
     } else {

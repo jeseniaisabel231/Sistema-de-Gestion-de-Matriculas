@@ -76,7 +76,7 @@ import { Carga } from '../components/carga.component';
           <div
             class="flex flex-col bg-white p-5 pl-9 rounded-[12px] flex-1 text-[23px] font-bold"
           >
-            <h1 class="">Estudiantes</h1>
+            <h1 >Estudiantes</h1>
             <button
               class="w-[125px] mt-1 p-2 rounded-[8px] bg-[#2872FF] text-white font-light text-[14px]"
               (click)="mostrarModal.set(true)"

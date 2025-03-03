@@ -8,7 +8,7 @@ import { of, tap } from 'rxjs';
 })
 export class MateriasService {
   private urlBackend =
-    'https://angry-caitrin-jhonmata0427s-projects-e45e6268.koyeb.app/api/v1';
+    'https://integrated-moina-jhonmata0427s-projects-e4972a05.koyeb.app/api/v1';
   private http = inject(HttpClient);
 
   //////////////////////////////////////////////////////////////////////////
