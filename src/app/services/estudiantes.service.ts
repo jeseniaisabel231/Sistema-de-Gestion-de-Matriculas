@@ -12,24 +12,16 @@ export class EstudiantesService {
     'https://angry-caitrin-jhonmata0427s-projects-e45e6268.koyeb.app/api/v1';
   private http = inject(HttpClient);
 
-  //variable que almacena los estudiantes actuales
-  public cacheEstudiantes: estudiante[] = [];
+  
 
   //////////////////////////////////////////////////////////////
   //metodo get para obtener estudiantes
   obtener() {
-    if (this.cacheEstudiantes.length) {
-      return of(this.cacheEstudiantes);
-    }
+    
     return this.http
       .get<estudiante[]>(`${this.urlBackend}/estudiantes`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
-      .pipe(
-        tap((Estudiantes) => {
-          this.cacheEstudiantes = Estudiantes;
-        })
-      );
   }
 
   //////////////////////////////////////////////////////////////
@@ -39,16 +31,7 @@ export class EstudiantesService {
       .delete<void>(`${this.urlBackend}/estudiantes/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
-      .pipe(
-        tap(() => {
-          //se va actualizando el cache local
-          const indice = this.cacheEstudiantes.findIndex(
-            //busca el indice del estudiante
-            (item) => item.id === id
-          );
-          this.cacheEstudiantes.splice(indice, 1); //splice(indice, 1):
-        })
-      );
+      
   }
 
   //////////////////////////////////////////////////////////////////
@@ -58,12 +41,7 @@ export class EstudiantesService {
       .put<estudiante>(`${this.urlBackend}/estudiantes/${id}`, datos, {//datos: es el cuerpo de solictud PUT
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
-      .pipe(
-        tap((estudiante) => {
-          const indice = this.cacheEstudiantes.findIndex((item) => item.id === id);
-          this.cacheEstudiantes[indice] = estudiante;
-        })
-      );
+
   }
 
   //////////////////////////////////////////////////////////////////
@@ -73,10 +51,5 @@ export class EstudiantesService {
       .post<estudiante>(`${this.urlBackend}/estudiantes`, estudiante, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       })
-      .pipe(
-        tap((estudiante) => {
-          this.cacheEstudiantes.push(estudiante);
-        })
-      );
   }
 }

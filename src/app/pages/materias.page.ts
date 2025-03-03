@@ -124,6 +124,7 @@ import { Carga } from '../components/carga.component';
               [datosTabla]="datosBuscados()"
               [datosAlmacenados]="datosMaterias"
               [servicioEliminar]="serviceMateria"
+              (cambioEliminar)="datosEliminados($event)"
             ></tabla>
             }
           </div>
@@ -165,22 +166,33 @@ export class MateriasPage {
 
   //Informacion que aparecera en los iconos, para ver, editar y crear
   public datosMaterias = new FormGroup({
-    nombre: new FormControl('', [Validators.required, Validators.minLength(3)]),
-    codigo: new FormControl('', [Validators.required, Validators.minLength(5)]),
+    nombre: new FormControl('', [
+      Validators.required, 
+      ]),
+    codigo: new FormControl('', [
+      
+      Validators.required,]),
     descripcion: new FormControl('', [
       Validators.required,
-      Validators.minLength(10),
     ]),
     creditos: new FormControl('', [
       Validators.required,
-      Validators.min(1),
-      Validators.max(6),
     ]),
   });
 
   //funcion para recibir datos creados
-  public datosCreados(datoCreado:materia){
-    this.materias.update(materiasActuales=>[...materiasActuales, datoCreado])
+  public datosCreados(datoCreado: materia) {
+    this.materias.update((materiasActuales) => [
+      ...materiasActuales,
+      datoCreado,
+    ]);
+  }
+
+  //funcion que recibe los datos de eliminados
+  public datosEliminados(idEliminado: number) {
+    this.materias.update((datos) =>
+      datos?.filter((registro) => registro.id !== idEliminado)
+    );
   }
 
   //consumo de endpoint de materias
@@ -192,7 +204,7 @@ export class MateriasPage {
     this.serviceMateria
       .obtener()
       .subscribe({
-        next: (materia:any) => {
+        next: (materia: any) => {
           //contiene el arreglo de materias obtenidas desde el backend.
 
           this.materias.set(materia);

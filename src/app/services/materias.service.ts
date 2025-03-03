@@ -11,17 +11,13 @@ export class MateriasService {
     'https://angry-caitrin-jhonmata0427s-projects-e45e6268.koyeb.app/api/v1';
   private http = inject(HttpClient);
 
-  
-
   //////////////////////////////////////////////////////////////////////////
   //metodo get no se necesita pasar parametros
   obtener() {
-    
     //Si no hay datos en la cacheMaterias, se hace una peticion GET al backend
     return this.http.get<materia[]>(`${this.urlBackend}/materias`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    //Guardar las materias en cache
   }
   //   Authorization: Bearer ... → Se envía un token de autenticación para acceder a la API.
   // localStorage.getItem('token') → Obtiene el token almacenado en el navegador.

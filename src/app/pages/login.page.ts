@@ -1,4 +1,4 @@
-import { Component, inject, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Inject, signal } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import {
   FormControl,
@@ -10,6 +10,7 @@ import { RouteConfigLoadEnd, Router } from '@angular/router';
 
 @Component({
   imports: [ReactiveFormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="flex h-screen">
       <div class="w-full flex flex-col justify-center items-center p-8">
@@ -66,7 +67,7 @@ import { RouteConfigLoadEnd, Router } from '@angular/router';
             </svg>
             <input
               class="border-[#878787] pl-12 border p-1.5 w-full h-[50px] rounded-[15px] outline-[#0042FF] "
-              [type]="password ? 'text' : 'password'"
+              [type]="password() ? 'text' : 'password'"
               placeholder="Contraseña"
               id="password"
               name="password"
@@ -75,11 +76,11 @@ import { RouteConfigLoadEnd, Router } from '@angular/router';
             <div
               class="flex items-center justify-center absolute right-3 inset-y-0"
             >
-              @if (!password) {
+              @if (!password()) {
 
               <svg
                 class="cursor-pointer"
-                (click)="password = !password"
+                (click)="password.set(!password())"
                 xmlns="http://www.w3.org/2000/svg"
                 height="24px"
                 viewBox="0 -960 960 960"
@@ -93,7 +94,7 @@ import { RouteConfigLoadEnd, Router } from '@angular/router';
               }@else{
               <svg
                 class="cursor-pointer "
-                (click)="password = !password"
+                (click)="password.set(!password())"
                 xmlns="http://www.w3.org/2000/svg"
                 height="24"
                 viewBox="0 -960 960 960"
@@ -108,14 +109,32 @@ import { RouteConfigLoadEnd, Router } from '@angular/router';
               }
             </div>
           </div>
-          <p class="text-star  flex text-[14px] text-red-700 mr-36 mt-4">
-              {{validacion}}
+          <p class="mx-auto text-[14px] text-red-700 mt-4"> 
+            {{ validacion() }}
           </p>
+
+          
+
           <button
             class=" p-1.5 w-2/3 h-[50px] rounded-[15px] bg-[#0042FF] text-white"
           >
+          @if (carga()) { 
+
+            <svg
+              class="animate-spin fill-[#ffffff] mx-auto"
+              xmlns="http://www.w3.org/2000/svg"
+              height="24"
+              viewBox="0 -960 960 960"
+              width="24"
+            >
+              <path
+                d="M480-60.78q-86.52 0-162.9-32.96-76.37-32.95-133.39-89.97T93.74-317.1Q60.78-393.48 60.78-480q0-87.04 32.95-163.06 32.95-76.03 89.96-133.18t133.4-90.07q76.39-32.91 162.91-32.91 22.09 0 37.54 15.46Q533-868.3 533-846.22q0 22.09-15.46 37.55-15.45 15.45-37.54 15.45-130.18 0-221.7 91.52t-91.52 221.69q0 130.18 91.52 221.71 91.52 91.52 221.69 91.52 130.18 0 221.71-91.52 91.52-91.52 91.52-221.7 0-22.09 15.45-37.54Q824.13-533 846.22-533q22.08 0 37.54 15.46 15.46 15.45 15.46 37.54 0 86.52-32.95 162.92t-89.96 133.44q-57.01 57.03-133.1 89.95Q567.12-60.78 480-60.78"
+              />
+            </svg>
+          }@else {
             Iniciar Sesión
-          </button>
+          }
+        </button>
         </form>
       </div>
       <img
@@ -131,10 +150,13 @@ export class LoginPage {
   private serviceRouter = inject(Router); //para las rutas
 
   //variable del ojito
-  public password = false;
+  public password = signal<boolean>(false);
+
+  //variable de carga
+  public carga = signal<boolean>(false);
 
   //para la contrasena o email
-  public validacion = "";
+  public validacion = signal<string>('');
 
   public formulario = new FormGroup({
     email: new FormControl('', [Validators.email, Validators.required]), //valodacion de correo y que no sea vacio: required
@@ -147,6 +169,7 @@ export class LoginPage {
   onSubmit() {
     console.log(this.formulario.value);
     if (this.formulario.valid) {
+      this.carga.set(true);
       //metodo creado en el authservice(login)
       this.serviceAuth
         .login(this.formulario.value.email!, this.formulario.value.password!)
@@ -154,17 +177,21 @@ export class LoginPage {
           next: (response) => {
             this.serviceRouter.navigate(['/modulo-materias']); //me redireccion a la pantalla de materias, si la peticion fue exitosa
             console.log(response);
-          },error:({error}:{error:any})=>{
-            console.log(error)
-            this.validacion = error.response//error.response y este contiene el mensaje
-          }
+            this.carga.set(false);
+          },
+          error: ({ error }: { error: any }) => {
+            console.log(error);
+            this.validacion.set(error.response); //error.response y este contiene el mensaje
+            this.carga.set(false);
+          },
         });
       //obtiene los datos de login y da a entender! que no sera vacio
-    }else{
-      this.validacion = 'Complete correctamente los campos'
+    } else {
+      this.validacion.set('Complete correctamente los campos');
+      this.carga.set(false);
     }
-    setTimeout(()=>{
-      this.validacion=""
-    },4000)
+    setTimeout(() => {
+      this.validacion.set("");
+    }, 3000);
   }
 }

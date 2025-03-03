@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -15,7 +21,7 @@ import {
   FormsModule,
   Validators,
 } from '@angular/forms';
-import { Carga } from "../components/carga.component";
+import { Carga } from '../components/carga.component';
 
 @Component({
   imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule, Carga],
@@ -82,7 +88,7 @@ import { Carga } from "../components/carga.component";
               acciones="Registrar"
               [datosFormulario]="datosMatriculas"
               [servicioRegistrar]="serviceMatricula"
-              
+              (cambioEmitir)="datosCreados($event)"
             ></formulario>
 
             <div
@@ -115,12 +121,13 @@ import { Carga } from "../components/carga.component";
             <carga></carga>
             }@else {
 
-              <tabla
-                titulo="matricula"
-                [datosTabla]="datosBuscados()"
-                [datosAlmacenados]="datosMatriculas"
-                [servicioEliminar]="serviceMatricula"
-              ></tabla>
+            <tabla
+              titulo="matricula"
+              [datosTabla]="datosBuscados()"
+              [datosAlmacenados]="datosMatriculas"
+              [servicioEliminar]="serviceMatricula"
+              (cambioEliminar)="datosEliminados($event)"
+            ></tabla>
             }
           </div>
         </section>
@@ -144,7 +151,7 @@ export class MatriculasPage {
 
   //variable que almacena datos filtrados de barra de busqueda
   public datosBuscados = linkedSignal<matricula[]>(() => {
-    const datosMatriculas = this.matriculas;
+    const datosMatriculas = this.matriculas();
     if (this.busqueda() !== '') {
       return datosMatriculas.filter((registro) =>
         Object.values(registro).some((valor) =>
@@ -155,22 +162,36 @@ export class MatriculasPage {
     return datosMatriculas;
   });
 
-  public matriculas: matricula[] = [];
+  public matriculas = signal<matricula[]>([]);
 
   //Informacion que aparecera en los iconos, para ver, editar y crear
   public datosMatriculas = new FormGroup({
     codigo: new FormControl('', [Validators.required, Validators.minLength(5)]),
     descripcion: new FormControl('', [
       Validators.required,
-      Validators.minLength(10),
-      Validators.maxLength(50),
     ]),
     id_estudiante: new FormControl('', [
       Validators.required,
-      Validators.min(1),
     ]),
-    id_materia: new FormControl('', [Validators.required, Validators.min(1)]),
+    id_materia: new FormControl('', [
+      Validators.required, 
+      ]),
   });
+
+  //funcion para recibir datos creados
+  public datosCreados(datoCreado: matricula) {
+    this.matriculas.update((matriculasActuales) => [
+      ...matriculasActuales,
+      datoCreado,
+    ]);
+  }
+
+  //funcion que recibe los datos de eliminados
+  public datosEliminados(idEliminado: number) {
+    this.matriculas.update((datos) =>
+      datos?.filter((registro) => registro.id !== idEliminado)
+    );
+  }
 
   ///////////////////////////////////////////////////////
   //consumo de endpoint de matriculas
@@ -178,13 +199,18 @@ export class MatriculasPage {
     private router: Router,
     private breakpointObserver: BreakpointObserver
   ) {
-    this.serviceMatricula.obtener().subscribe({
-      next: (matricula) => {
-        this.matriculas = matricula;
-        console.log(matricula);
-        this.datosBuscados.set(matricula)
-      },
-    }).add(()=>{this.carga.set(false)});//carga de datos;
+    this.serviceMatricula
+      .obtener()
+      .subscribe({
+        next: (matricula:any) => {
+          this.matriculas.set(matricula);
+          console.log(matricula);
+          this.datosBuscados.set(matricula);
+        },
+      })
+      .add(() => {
+        this.carga.set(false);
+      }); //carga de datos;
   }
 
   ngOnInit() {

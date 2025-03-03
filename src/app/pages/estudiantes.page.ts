@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
@@ -15,7 +23,7 @@ import {
   NgModel,
   Validators,
 } from '@angular/forms';
-import { Carga } from "../components/carga.component";
+import { Carga } from '../components/carga.component';
 
 @Component({
   imports: [Navegacion, Bienvenido, Formulario, Tabla, FormsModule, Carga],
@@ -82,6 +90,7 @@ import { Carga } from "../components/carga.component";
               acciones="Registrar"
               [datosFormulario]="datosEstudiantes"
               [servicioRegistrar]="serviceEstudiante"
+              (cambioEmitir)="datosCreados($event)"
             ></formulario>
 
             <div
@@ -110,15 +119,17 @@ import { Carga } from "../components/carga.component";
               />
             </div>
             @if (carga()) {
-              <carga></carga>
+            <carga></carga>
             }@else {
 
-              <tabla
-                titulo="estudiante"
-                [datosTabla]="datosBuscados()"
-                [datosAlmacenados]="datosEstudiantes"
-                [servicioEliminar]="serviceEstudiante"
-              ></tabla>
+            <tabla
+              titulo="estudiante"
+              [datosTabla]="datosBuscados()"
+              [datosAlmacenados]="datosEstudiantes"
+              [servicioEliminar]="serviceEstudiante"
+              (cambioEliminar)="datosEliminados($event)"
+              (cambioEliminar)="datosEliminados($event)"
+            ></tabla>
             }
           </div>
         </section>
@@ -141,65 +152,75 @@ export class EstudiantesPage {
 
   //variable que almacena datos filtrados de barra de busqueda
   public datosBuscados = linkedSignal<estudiante[]>(() => {
-    const datosEstudiantes = this.estudiantes;
+    const datosEstudiantes = this.estudiantes();
     if (this.busqueda() !== '') {
       return datosEstudiantes.filter((registro) =>
         Object.values(registro).some((valor) =>
           valor.toString().toLowerCase().includes(this.busqueda().toLowerCase())
         )
       );
-    }return datosEstudiantes
+    }
+    return datosEstudiantes;
   });
 
   //variable que almacena lo que traera del backend
-  public estudiantes: estudiante[] = [];
+  public estudiantes = signal<estudiante[]>([]);
 
   //Informacion que aparecera en los iconos, para ver, editar y crear
   public datosEstudiantes = new FormGroup({
     nombre: new FormControl('', [
       Validators.required,
-      Validators.minLength(3),
-      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
     ]),
     apellido: new FormControl('', [
       Validators.required,
-      Validators.minLength(3),
-      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
     ]),
     cedula: new FormControl('', [
       Validators.required,
-      Validators.minLength(10),
-      Validators.pattern('^[0-9]*$') // Solo números
     ]),
     fecha_nacimiento: new FormControl('', [Validators.required]),
     ciudad: new FormControl('', [
       Validators.required,
-      Validators.minLength(4),
-      Validators.pattern('^[a-zA-Z ]*$') // Solo letras y espacios
     ]),
     direccion: new FormControl('', [
       Validators.required,
-      Validators.minLength(8),
     ]),
     telefono: new FormControl('', [
       Validators.required,
-      Validators.minLength(10),
-      Validators.pattern('^[0-9]*$') // Solo números
     ]),
     email: new FormControl('', [Validators.required, Validators.email]),
   });
+
+  //funcion para recibir datos creados
+  public datosCreados(datoCreado: estudiante) {
+    this.estudiantes.update((estudiantesActuales) => [
+      ...estudiantesActuales,
+      datoCreado,
+    ]);
+  }
+
+  //funcion que recibe los datos de eliminados
+  public datosEliminados(idEliminado: number) {
+    this.estudiantes.update((datos) =>
+      datos?.filter((registro) => registro.id !== idEliminado)
+    );
+  }
 
   //consumo de endpoint de estudiantes
   constructor(
     private router: Router,
     private breakpointObserver: BreakpointObserver
   ) {
-    this.serviceEstudiante.obtener().subscribe({
-      next: (estudiante) => {
-        this.estudiantes = estudiante;
-        this.datosBuscados.set(estudiante)
-      },
-    }).add(()=>{this.carga.set(false)})//cambia estado de carga;
+    this.serviceEstudiante
+      .obtener()
+      .subscribe({
+        next: (estudiante: any) => {
+          this.estudiantes.set(estudiante);
+          this.datosBuscados.set(estudiante);
+        },
+      })
+      .add(() => {
+        this.carga.set(false);
+      }); //cambia estado de carga;
   }
 
   ngOnInit() {

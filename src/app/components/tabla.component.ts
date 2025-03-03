@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  model,
+  output,
+  signal,
+} from '@angular/core';
 import { Actions, Formulario, TituloForms } from './formulario.component';
 import { TitleCasePipe } from '@angular/common';
 import { estudiante } from '../interfaces/estudiante.interface';
@@ -10,7 +18,9 @@ export type DatosTabla = estudiante | materia | matricula;
 
 @Component({
   selector: 'tabla',
+
   imports: [Formulario, TitleCasePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="overflow-auto w-full">
       <table
@@ -113,6 +123,9 @@ export class Tabla {
   public titulo = input.required<TituloForms>();
   public idAcciones = signal<number>(1);
 
+  //variable para ver los cambios de la tabla
+  public cambioEliminar = output<number>(); 
+
   //datos que van a llegar a la tabla
   public datosTabla = model<DatosTabla[]>(); //input es tipo DatosTabla
 
@@ -129,7 +142,7 @@ export class Tabla {
   public verFormulario(datos: DatosTabla) {
     this.mostrarModal.set(true);
     this.desabilitado.set(true);
-    this.acciones.set('Visualizar');//se utiliza .set cuando se modifica el valor
+    this.acciones.set('Visualizar'); //se utiliza .set cuando se modifica el valor
     this.datosAlmacenados()?.patchValue(datos);
   }
   //editar
@@ -148,9 +161,8 @@ export class Tabla {
         .eliminar(id)
         .subscribe({
           next: () => {
-            this.datosTabla.update((datos)=>
-              datos?.filter((registro)=>registro.id!==id)
-            )
+            
+            this.cambioEliminar.emit(id)
             console.log('Eliminado con exito');
           },
         });
@@ -158,8 +170,12 @@ export class Tabla {
   }
 
   //funcion que recibe el evento de cambioEmitir
-  public registroActualizado(datosRecibidos:any){
-    this.datosTabla.update((datosActuales)=>datosActuales?.map((registro)=>registro.id===datosRecibidos.id? datosRecibidos: registro))
+  public registroActualizado(datosRecibidos: any) {
+    this.datosTabla.update((datosActuales) =>
+      datosActuales?.map((registro) =>
+        registro.id === datosRecibidos.id ? datosRecibidos : registro
+      )
+    );
   }
 
   constructor() {
