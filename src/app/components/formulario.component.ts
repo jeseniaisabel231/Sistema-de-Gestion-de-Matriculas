@@ -8,6 +8,7 @@ import {
   viewChild,
   SimpleChanges,
   output,
+  computed,
 } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -49,18 +50,19 @@ export type Actions = 'Registrar' | 'Actualizar' | 'Visualizar';
         (ngSubmit)="onSubmit()"
         [formGroup]="datosFormulario()!"
       >
-        @for (item of inputs[titulo()]; track $index) {
+        @for (item of obtenerClave() ; track $index) {
 
         <label class="text-[#3B3D3E] flex flex-col font-medium" [for]="item">
           {{ item | titlecase }}
           @if(!desabilitado()){
 
           <input
-            type="text"
+            [type]="inputs[titulo()][item]"
             [id]="item"
             [name]="item"
-            class="bg-white rounded-[6px] border border-[#C5C6C6] h-9 mb-2 last:mb-0 outline-[#3B3D3E] hover:border-[#3B3D3E] pl-2"
+            class="bg-white rounded-[6px] border border-[#C5C6C6] h-9 mb-2 last:mb-0 outline-[#3B3D3E] hover:border-[#3B3D3E] pl-2 placeholder:font-light placeholder:text-[15px]"
             [formControlName]="item"
+            placeholder="Ingresar {{ item }}"
           />
 
           }@else {
@@ -114,22 +116,36 @@ export class Formulario {
 
   public idRegistro = input<number>();
 
-  public inputs: Record<TituloForms, string[]> = {
-    estudiante: [
+  public inputs: Record<TituloForms, Record<string, string>> = {
+    estudiante: {
       //claves
       //valor
-      'nombre',
-      'apellido',
-      'cedula',
-      'fecha_nacimiento',
-      'ciudad',
-      'direccion',
-      'telefono',
-      'email',
-    ],
-    materia: ['nombre', 'descripcion', 'codigo', 'creditos'],
-    matricula: ['codigo', 'descripcion', 'id_estudiante', 'id_materia'],
+      nombre: 'text',
+      apellido: 'text',
+      cedula: 'number',
+      fecha_nacimiento: 'date',
+      ciudad: 'text',
+      direccion: 'text',
+      telefono: 'number',
+      email: 'email',
+    },
+    materia: {
+      nombre: 'text',
+      descripcion: 'text',
+      codigo: 'text',
+      creditos: 'number',
+    },
+    matricula: {
+      codigo: 'text',
+      descripcion: 'text',
+      id_estudiante: 'number',
+      id_materia: 'number',
+    },
   };
+
+  //variable que obtenga las claves de los 'inputs'
+  public obtenerClave = computed(() => Object.keys(this.inputs[this.titulo()]));
+
   public close() {
     this.mostrarModal.set(false);
   }
@@ -157,6 +173,8 @@ export class Formulario {
           next: (registroCreado: any) => {
             this.cambioEmitir.emit(registroCreado);
             alert('El registro se ha agregado correctamente');
+            this.datosFormulario()?.reset(); //borra los datos almacenad en registrar formulario
+            this.close();
           },
           error: ({ error }: { error: any }) => {
             const listaErrores = error.response?.errors ?? [];
@@ -176,13 +194,14 @@ export class Formulario {
           next: (registroActualizado: any) => {
             this.cambioEmitir.emit(registroActualizado);
             alert('El registro se ha actualizado correctamente');
+            this.datosFormulario()?.reset(); //borra los datos almacenad en registrar formulario
+            this.close();
           },
           error: ({ error }: { error: any }) => {
             alert(error.response);
           },
         });
     }
-    this.datosFormulario()?.reset(); //borra los datos almacenad en registrar formulario
-    this.close();
+    
   }
 }
