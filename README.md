@@ -1,59 +1,61 @@
-# SistemaGestionMatriculas
+<h1 align='center'>
+  <img src='/app/src/main/res/drawable/logo.png' width=35 />
+  Frontend del Sistema de Gestión de Matrículas
+  <img src='/app/src/main/res/drawable/logo.png' width=35 />
+</h1>
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.7.
+## Descripción 🏫
 
-## Development server
+> [!IMPORTANT]
+> Este proyecto corresponde al frontend del Sistema de Gestión de Matrículas desarrollado en Angular para la administración de inscripciones en materias académicas.
 
-To start a local development server, run:
+## Integrantes y actividades 👥
 
-```bash
-ng serve
-```
+| Nombre               | Rol                            | Actividades principales                                 |
+|----------------------|--------------------------------|---------------------------------------------------------|                                      
+| **Isabel Pazto**     | 💻 Desarrolladora Frontend.    | Consumo de la API del backend                           |
+| **John Mata**        | 🛠️ Desarrolladora Backend.     | Codificacion de la API.                                 |
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Code scaffolding
+## Características principales ✨
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+🌟 **Pantalla de Login**: Autenticación de usuarios mediante email y contraseña.
 
-```bash
-ng generate component component-name
-```
+🔍 **Módulo de Materias**: Gestión CRUD de materias.  
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+📚 **Módulo de Estudiantes**: Gestión CRUD de estudiantes.
 
-```bash
-ng generate --help
-```
+🎨 **Módulo de Matrículas**: Gestión CRUD de matrículas, permitiendo la asignación de estudiantes a materias.
 
-## Building
+## Tecnologías utilizadas 🛠️
+![Angular](https://img.shields.io/badge/angular-%23DD0031.svg?style=for-the-badge&logo=angular&logoColor=white) ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) ![Vercel](https://img.shields.io/badge/vercel-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
 
-To build the project run:
+## Instalación
 
-```bash
-ng build
-```
+<summary>🔧 <strong>Para desarrolladores</strong></summary>
+  
+  1. **Clonar el repositorio**  
+     ```bash
+     git clone https://github.com/usuario/frontend-matriculas.git
+     ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+  2. **Instalar dependencias**  
+     ```bash
+     npm install
+     ```
 
-## Running unit tests
+  3. **Ejecutar el frontend**  
+     ```bash
+     ng serve
+     ```
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
 
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Desarrollo 
+* Diseñar las interfaces de usuario siguiendo principios de UI/UX.
+* Implementar la navegación y protección de rutas con Angular Router.
+* Conectar los componentes con el backend a través de API REST.
+* Manejo de estado utilizando servicios y observables de Angular.
+* Implementar estilos utilizando Tailwind CSS.
+* Realizar pruebas de funcionalidad y rendimiento.
+* Desplegar el sistema en Vercel.
+  
